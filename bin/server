@@ -1,0 +1,5 @@
+#! /usr/bin/env mzscheme -rq
+(require (prefix ls. 
+		 (file "../src/leetserver.ss")))
+
+(thread-wait (ls.start 9010))
