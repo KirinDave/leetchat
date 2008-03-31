@@ -2,4 +2,4 @@
 (require (prefix ls. 
 		 (file "../src/leetserver.ss")))
 
-(thread-wait (ls.start 9010))
+(thread-wait (ls.start 9030))

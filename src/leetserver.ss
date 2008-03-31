@@ -1,5 +1,10 @@
 (module leetserver mzscheme
-		(require (lib "list.ss"))
+		(require (lib "list.ss") (lib "string.ss"))
+
+(define (close-connection in out)
+  (tcp-close in)
+  (tcp-close out)
+  'closed)
 
 (define (echo line out)
   (printf "(~s) Got line: ~s~n" (current-thread) line)
@@ -13,29 +18,38 @@
 
 (define (server-for-port port)
   (let ([listener (tcp-listen port)])
+	(display "Going to accept loop...\n")
 	(let accept-loop ()
 	  (let-values ([(in out) (tcp-accept listener)])
-				  (thread (lambda () (thread-handler in out)))
+				  (display "tcp-accept\n")
+				  (thread (lambda () 
+							(display "Opening new connection!\n")
+							(if (authenticated? in out)
+								(thread-handler in out)
+								(close-connection in out))))
 				  (accept-loop)))))
 				  
 (define (start port)
   (thread (lambda () (server-for-port port))))
 
-(provide start)
+; Lousy password system
+(define users (list))
+(define (add-user n p) (set! users (cons (cons n p) users)))
+(define (check-user n p)
+  (equal? (findf (lambda (x) (equal? n (car x))) users)
+		  (cons n p)))
+
+; Lousy authentication
+(define (authenticated? in out) 
+  (display "Trying to authenticate...\n")
+  (fprintf out "AUTHENTICATE:")
+  (flush-output out)
+  (let ([aline (regexp-split " " (read-line in))])
+	(if (= (length aline) 2)
+		(check-user (first aline) (second aline))
+		#f)))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-)
+(add-user "dave" "f")
+(provide start add-user)
+) ; End module
