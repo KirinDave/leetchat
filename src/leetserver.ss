@@ -52,4 +52,30 @@
 
 (add-user "dave" "f")
 (provide start add-user)
+
+
+; Line handlers
+(define (match-line-spec pattern pliterals split-regex data)
+  (descending-match pattern 
+                    pliterals
+                    (regexp-split split-regex data) 
+                    (lambda (x) (string->bytes/utf-8 (symbol->string x)))
+                    (list)))
+
+(define (descending-match pattern pliterals items symbol->val accum)
+  (let ((fail #f))
+    (cond 
+     ((and (null? pattern) (null? items)) accum) ; Finished pattern match, succed
+     ((symbol? pattern) (cons (list pattern items) accum)) ; wildcard, succed. 
+     ((or (null? pattern) (null? items)) fail) ; Incomplete match, fail
+     (else ; Descend into an actual match
+      (let ([p (car pattern)]
+            [pv (symbol->val (car pattern))]
+            [d (car items)])
+        (if (member p pliterals) (if (equal? pv d)
+                                     (descending-match (cdr pattern) pliterals (cdr items) symbol->val accum)
+                                     fail)
+            (descending-match (cdr pattern) pliterals (cdr items) symbol->val (cons (list p d) accum))))))))
+
+  
 ) ; End module
